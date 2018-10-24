@@ -36,11 +36,13 @@ from homeassistant.const import CONF_DEVICES, CONF_NAME
 from homeassistant.components.switch import (SwitchDevice, PLATFORM_SCHEMA)
 import homeassistant.helpers.config_validation as cv
 
+CONF_REGISTRATION = "no_registration"
 DEVICE_SCHEMA = vol.Schema({
     vol.Required(CONF_NAME): cv.string
 })
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
+    vol.Optional(CONF_REGISTRATION): cv.string,
     vol.Optional(CONF_DEVICES, default={}): {cv.string: DEVICE_SCHEMA}
 })
 
@@ -55,6 +57,11 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     switches = []
     lwlink = hass.data[LIGHTWAVE_LINK]
 
+    registration = config.get(CONF_REGISTRATION, None)
+    if registration is None:
+        switches.append(
+            LRFSwitch("Press to register LWRF", None, lwlink))
+
     for device_id, device_config in config.get(CONF_DEVICES, {}).items():
         name = device_config[CONF_NAME]
         switches.append(LRFSwitch(name, device_id, lwlink))
@@ -64,6 +71,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 
 class LRFSwitch(SwitchDevice):
     """ Provides a LightWave switch. """
+
     def __init__(self, name, device_id, lwlink):
         self._name = name
         self._device_id = device_id

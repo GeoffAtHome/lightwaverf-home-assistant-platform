@@ -20,6 +20,8 @@ _LOGGER = logging.getLogger(__name__)
 
 LIGHTWAVE_LINK = 'lightwave_link'
 DOMAIN = 'lightwave'
+LWRF_REGISTRATION = '100,!F*p'
+LWRF_DEREGISTRATION = '100,!F*xP'
 
 CONFIG_SCHEMA = vol.Schema({
     DOMAIN: vol.Schema({
@@ -27,13 +29,11 @@ CONFIG_SCHEMA = vol.Schema({
     })
 }, extra=vol.ALLOW_EXTRA)
 
+
 async def async_setup(hass, config):
     """Try to start embedded Lightwave broker."""
-    _LOGGER.info("LW broker started!")
     host = config[DOMAIN].get(CONF_HOST)
-    _LOGGER.info("LW broker host address: " + host)
     hass.data[LIGHTWAVE_LINK] = LWLink(host)
-    _LOGGER.info("LW broker complete!")
     return True
 
 
@@ -59,26 +59,41 @@ class LWLink():
             LWLink.thread = threading.Thread(target=self._sendQueue)
             LWLink.thread.start()
 
-
     def turn_on_light(self, device_id, name):
-        msg = '321,!%sFdP32|Turn On|%s' % (device_id, name)
+        if device_id is None:
+            msg = LWRF_REGISTRATION
+        else:
+            msg = '321,!%sFdP32|Turn On|%s' % (device_id, name)
+
         self._send_message(msg)
 
     def turn_on_switch(self, device_id, name):
-        msg = '321,!%sF1|Turn On|%s' % (device_id, name)
+        if device_id is None:
+            msg = LWRF_REGISTRATION
+        else:
+            msg = '321,!%sF1|Turn On|%s' % (device_id, name)
+
         self._send_message(msg)
 
     def turn_on_with_brightness(self, device_id, name, brightness):
-        """Scale brightness from 0..255 to 0..32"""
-        brightness_value = round((brightness * 32) / 255)
-        # F1 = Light on and F0 = light off. FdP[0..32] is brightness. 32 is
-        # full. We want that when turning the light on.
-        msg = '321,!%sFdP%d|Lights %d|%s' % (device_id, brightness_value, brightness_value, name)
+        if device_id is None:
+            msg = LWRF_REGISTRATION
+        else:
+            """Scale brightness from 0..255 to 0..32"""
+            brightness_value = round((brightness * 32) / 255)
+            # F1 = Light on and F0 = light off. FdP[0..32] is brightness. 32 is
+            # full. We want that when turning the light on.
+            msg = '321,!%sFdP%d|Lights %d|%s' % (
+                device_id, brightness_value, brightness_value, name)
+
         self._send_message(msg)
 
-
     def turn_off(self, device_id, name):
-        msg = "321,!%sF0|Turn Off|%s" % (device_id, name)
+        if device_id is None:
+            msg = LWRF_DEREGISTRATION
+        else:
+            msg = "321,!%sF0|Turn Off|%s" % (device_id, name)
+
         self._send_message(msg)
 
     def _sendQueue(self):
@@ -92,12 +107,12 @@ class LWLink():
         max_retries = 15
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as write_sock, socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as read_sock:
-                write_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                write_sock.setsockopt(
+                    socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 read_sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
                 read_sock.settimeout(LWLink.SOCKET_TIMEOUT)
                 read_sock.bind(('0.0.0.0', LWLink.RX_PORT))
                 while max_retries:
-                    _LOGGER.info("LW broker retries: " + str(max_retries))
                     max_retries -= 1
                     write_sock.sendto(msg.encode(
                         'UTF-8'), (LWLink.link_ip, LWLink.TX_PORT))
@@ -117,14 +132,14 @@ class LWLink():
                     time.sleep(0.25)
 
         except socket.timeout:
-            _LOGGER.info("LW broker timeout!")
+            _LOGGER.error("LW broker timeout!")
             return result
 
         except:
-            _LOGGER.info("LW broker something went wrong!")
+            _LOGGER.error("LW broker something went wrong!")
 
         if result:
             _LOGGER.info("LW broker OK!")
         else:
-            _LOGGER.info("LW broker fail!")
+            _LOGGER.error("LW broker fail!")
         return result

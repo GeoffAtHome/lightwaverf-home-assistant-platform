@@ -38,11 +38,13 @@ from homeassistant.components.light import (
     Light, ATTR_BRIGHTNESS, SUPPORT_BRIGHTNESS, PLATFORM_SCHEMA)
 import homeassistant.helpers.config_validation as cv
 
+CONF_REGISTRATION = "no_registration"
 DEVICE_SCHEMA = vol.Schema({
     vol.Required(CONF_NAME): cv.string
 })
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
+    vol.Optional(CONF_REGISTRATION): cv.string,
     vol.Optional(CONF_DEVICES, default={}): {cv.string: DEVICE_SCHEMA}
 })
 
@@ -56,6 +58,10 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     """ Find and return LightWave lights """
     lights = []
     lwlink = hass.data[LIGHTWAVE_LINK]
+
+    registration = config.get(CONF_REGISTRATION, None)
+    if registration is None:
+        lights.append(LRFLight("Press to register LWRF", None, lwlink))
 
     for device_id, device_config in config.get(CONF_DEVICES, {}).items():
         name = device_config[CONF_NAME]
