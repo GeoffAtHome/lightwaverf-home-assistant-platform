@@ -60,40 +60,24 @@ class LWLink():
             LWLink.thread.start()
 
     def turn_on_light(self, device_id, name):
-        if device_id is None:
-            msg = LWRF_REGISTRATION
-        else:
-            msg = '321,!%sFdP32|Turn On|%s' % (device_id, name)
-
+        msg = '321,!%sFdP32|Turn On|%s' % (device_id, name)
         self._send_message(msg)
 
     def turn_on_switch(self, device_id, name):
-        if device_id is None:
-            msg = LWRF_REGISTRATION
-        else:
-            msg = '321,!%sF1|Turn On|%s' % (device_id, name)
-
+        msg = '321,!%sF1|Turn On|%s' % (device_id, name)
         self._send_message(msg)
 
     def turn_on_with_brightness(self, device_id, name, brightness):
-        if device_id is None:
-            msg = LWRF_REGISTRATION
-        else:
-            """Scale brightness from 0..255 to 0..32"""
-            brightness_value = round((brightness * 32) / 255)
-            # F1 = Light on and F0 = light off. FdP[0..32] is brightness. 32 is
-            # full. We want that when turning the light on.
-            msg = '321,!%sFdP%d|Lights %d|%s' % (
-                device_id, brightness_value, brightness_value, name)
-
+        """Scale brightness from 0..255 to 1..32"""
+        brightness_value = round((brightness * 31) / 255) + 1
+        # F1 = Light on and F0 = light off. FdP[0..32] is brightness. 32 is
+        # full. We want that when turning the light on.
+        msg = '321,!%sFdP%d|Lights %d|%s' % (
+            device_id, brightness_value, brightness_value, name)
         self._send_message(msg)
 
     def turn_off(self, device_id, name):
-        if device_id is None:
-            msg = LWRF_DEREGISTRATION
-        else:
-            msg = "321,!%sF0|Turn Off|%s" % (device_id, name)
-
+        msg = "321,!%sF0|Turn Off|%s" % (device_id, name)
         self._send_message(msg)
 
     def _sendQueue(self):
@@ -119,7 +103,14 @@ class LWLink():
                     result = False
                     while True:
                         response, dummy = read_sock.recvfrom(1024)
-                        response = response.decode('UTF-8').split(',')[1]
+                        response = response.decode('UTF-8')
+                        if "Not yet registered." in response:
+                            _LOGGER.error("Not yet registered")
+                            self._send_message(LWRF_REGISTRATION)
+                            result = True
+                            break
+
+                        response.split(',')[1]
                         if response.startswith('OK'):
                             result = True
                             break

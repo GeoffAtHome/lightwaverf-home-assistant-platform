@@ -30,7 +30,6 @@ To add Lightwave lights in the **light** section add:
 ```
 light:
   - platform: lightwave
-    no_registration: true
     devices:
       R1D1:
         name: Room one Device one
@@ -59,8 +58,10 @@ switch:
 
 Each **device** requires an **id** and a **name**. The **id** takes the form **R#D#** where **R#** is the room number 
 and **D#** is the device number.
-Without **no_registration** a switch or light will be created that when pressed will ask the hub to register. When pressed it will show a message on your WiFi Link asking you to pair the device. You have 12 seconds to push the button on the WiFi Link to accept this. Once done, you should be able to control your lights via Home Asssistant. Turning the switch or light off will deregister the link.
-To hide the registration switch or light add **no_registration**.
+
+The first use of a switch or light will try to register with the WiFi Link hub. If the hub has not been registered a message on your WiFi Link asking you to pair the device. You have 12 seconds to push the button on the WiFi Link to accept this. Once done, you should be able to control your lights via Home Asssistant. 
+This only needs to be done once only if the hub has not been registered. 
+
 
 ### Acknowledgement
 Thanks to Chirag Desai for paving the way to getting this component done.
