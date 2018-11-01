@@ -4,8 +4,8 @@ homeassistant.components.light.lightwave
 Implements LightwaveRF lights.
 
 
-My understanding of the LightWave Hub is that devices cannot be discovered so must be
-registered manually. This is done in the configuration file:
+My understanding of the LightWave Hub is that devices cannot be discovered
+so must be registered manually. This is done in the configuration file:
 
 switch:
   - platform: lightwave
@@ -15,22 +15,11 @@ switch:
       R2D1:
         name: Room two Device one
 
-Each device requires an id and a name. THe id takes the from R#D# where R# is the room number 
-and D# is the device number.
-
-If devices are missing the default is to generate 15 rooms with 8 lights. From this you will
-be able to determine the room and device number for each light.
-
-TODO: 
-Add a registration button. Until then the following command needs to be sent to the LightwaveRF hub:
-    echo -ne "100,\!F*p." | nc -u -w1 LW_HUB_IP_ADDRESS 9760
-
-When this is sent you have 12 seconds to acknowledge the message on the hub.
+Each device requires an id and a name. THe id takes the from R#D#
+where R# is the room number and D# is the device number.
 
 For more details on the api see: https://api.lightwaverf.com/
 """
-
-import asyncio
 import logging
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICES, CONF_NAME
@@ -52,7 +41,8 @@ LIGHTWAVE_LINK = 'lightwave_link'
 DEPENDENCIES = ['lightwave']
 
 
-async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
+async def async_setup_platform(hass, config, async_add_entities,
+                               discovery_info=None):
     """ Find and return LightWave lights """
     lights = []
     lwlink = hass.data[LIGHTWAVE_LINK]
@@ -106,7 +96,7 @@ class LRFLight(Light):
         if ATTR_BRIGHTNESS in kwargs:
             self._brightness = kwargs[ATTR_BRIGHTNESS]
 
-        if not self._brightness == 255:
+        if self._brightness != 255:
             self._lwlink.turn_on_with_brightness(
                 self._device_id, self._name, self._brightness)
         else:
