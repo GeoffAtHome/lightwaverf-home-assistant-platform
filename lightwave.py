@@ -108,6 +108,8 @@ class LWLink():
                     socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 read_sock.setsockopt(socket.SOL_SOCKET,
                                      socket.SO_BROADCAST, 1)
+                read_sock.setsockopt(
+                    socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 read_sock.settimeout(LWLink.SOCKET_TIMEOUT)
                 read_sock.bind(('0.0.0.0', LWLink.RX_PORT))
                 while max_retries:
@@ -140,8 +142,8 @@ class LWLink():
             _LOGGER.error("LW broker timeout!")
             return result
 
-        except:
-            _LOGGER.error("LW broker something went wrong!")
+        except Exception as ex:
+            _LOGGER.error(ex)
             raise
 
         if result:
